@@ -1,6 +1,68 @@
+"use client"
+
+import { FormEvent, useState } from "react"
 import Link from "next/link"
 
+type ContactFormState = {
+  name: string
+  email: string
+  subject: string
+  phone: string
+  message: string
+}
+
+const initialState: ContactFormState = {
+  name: "",
+  email: "",
+  subject: "Tutoring inquiry",
+  phone: "",
+  message: "",
+}
+
 export default function ContactPage() {
+  const [form, setForm] = useState<ContactFormState>(initialState)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
+  const [successMessage, setSuccessMessage] = useState("")
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setErrorMessage("")
+    setSuccessMessage("")
+
+    if (!form.name.trim() || !form.email.trim() || !form.subject.trim() || !form.message.trim()) {
+      setErrorMessage("Please complete name, email, subject, and message.")
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        setErrorMessage(result.error || "Something went wrong while sending your message.")
+        return
+      }
+
+      setSuccessMessage("Your message has been sent successfully.")
+      setForm(initialState)
+    } catch (error) {
+      console.error("Contact form submission error:", error)
+      setErrorMessage("Unable to send your message right now. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <div>
       <section className="page-hero">
@@ -50,7 +112,6 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* CONTACT FORM */}
       <section className="section">
         <div className="container">
           <div className="contact-form-panel">
@@ -62,45 +123,89 @@ export default function ContactPage() {
               </p>
             </div>
 
-            <form className="contact-form">
+            <form className="contact-form" onSubmit={handleSubmit}>
               <div className="form-grid">
                 <div className="form-field">
-                  <label>Name</label>
-                  <input type="text" placeholder="Your name" />
+                  <label htmlFor="name">Name</label>
+                  <input
+                    id="name"
+                    type="text"
+                    placeholder="Your name"
+                    value={form.name}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, name: event.target.value }))
+                    }
+                  />
                 </div>
 
                 <div className="form-field">
-                  <label>Email</label>
-                  <input type="email" placeholder="Your email" />
+                  <label htmlFor="email">Email</label>
+                  <input
+                    id="email"
+                    type="email"
+                    placeholder="Your email"
+                    value={form.email}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, email: event.target.value }))
+                    }
+                  />
                 </div>
 
                 <div className="form-field">
-                  <label>Subject</label>
-                  <select>
-                    <option>Tutoring inquiry</option>
-                    <option>Partnership</option>
-                    <option>Foundation support</option>
-                    <option>General question</option>
+                  <label htmlFor="subject">Subject</label>
+                  <select
+                    id="subject"
+                    value={form.subject}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, subject: event.target.value }))
+                    }
+                  >
+                    <option value="Tutoring inquiry">Tutoring inquiry</option>
+                    <option value="Partnership">Partnership</option>
+                    <option value="Foundation support">Foundation support</option>
+                    <option value="General question">General question</option>
                   </select>
                 </div>
 
                 <div className="form-field">
-                  <label>Phone (optional)</label>
-                  <input type="text" placeholder="+27..." />
+                  <label htmlFor="phone">Phone (optional)</label>
+                  <input
+                    id="phone"
+                    type="text"
+                    placeholder="+27..."
+                    value={form.phone}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, phone: event.target.value }))
+                    }
+                  />
                 </div>
 
                 <div className="form-field form-field-wide">
-                  <label>Message</label>
+                  <label htmlFor="message">Message</label>
                   <textarea
+                    id="message"
                     rows={6}
                     placeholder="Tell us how we can help you..."
+                    value={form.message}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, message: event.target.value }))
+                    }
                   />
                 </div>
               </div>
 
+              {errorMessage ? <p className="form-message form-message-error">{errorMessage}</p> : null}
+              {successMessage ? (
+                <p className="form-message form-message-success">{successMessage}</p>
+              ) : null}
+
               <div className="form-actions">
-                <button type="submit" className="button button-primary">
-                  Send Message
+                <button
+                  type="submit"
+                  className="button button-primary"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Sending..." : "Send Message"}
                 </button>
               </div>
             </form>
@@ -108,7 +213,6 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* CONTACT TYPES */}
       <section className="section section-soft">
         <div className="container">
           <div className="section-header">
@@ -141,7 +245,6 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* CTA */}
       <section className="section">
         <div className="container">
           <div className="find-tutor-cta">

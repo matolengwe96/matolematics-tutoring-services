@@ -1,88 +1,68 @@
-import Image from "next/image"
+"use client"
+
+import { FormEvent, useState } from "react"
 import Link from "next/link"
 
-const subjects = [
-  "Mathematics",
-  "Physical Sciences",
-  "Accounting",
-  "Statistics",
-  "Coding",
-  "AI & Data Skills",
-]
+type TutorFormState = {
+  subject: string
+  level: string
+  budget: string
+  frequency: string
+  goals: string
+}
 
-const levels = [
-  "Primary School",
-  "Middle School",
-  "High School",
-  "University",
-  "Adult Learning",
-  "Exam Preparation",
-]
+const initialState: TutorFormState = {
+  subject: "",
+  level: "",
+  budget: "",
+  frequency: "",
+  goals: "",
+}
 
-const tutors = [
-  {
-    name: "Anele M.",
-    title: "Senior Mathematics Tutor",
-    subjects: "Algebra • Calculus • Exam Prep",
-    level: "High School • University",
-    mode: "Online • 1-on-1 • Group Support",
-    price: "From $12/session",
-    description:
-      "Focused on conceptual clarity, exam strategy, and long-term confidence in mathematics.",
-  },
-  {
-    name: "Lethabo K.",
-    title: "Physical Sciences Mentor",
-    subjects: "Chemistry • Physics • Problem Solving",
-    level: "High School",
-    mode: "Online • Revision Intensive",
-    price: "From $10/session",
-    description:
-      "Helps learners strengthen fundamentals and prepare with structured revision support.",
-  },
-  {
-    name: "Mpho T.",
-    title: "Statistics & Data Tutor",
-    subjects: "Statistics • Research Support • Data Basics",
-    level: "University • Adult Learning",
-    mode: "Online • Assignment Guidance",
-    price: "From $15/session",
-    description:
-      "Ideal for students who need practical help with statistics, interpretation, and confidence.",
-  },
-  {
-    name: "Naledi R.",
-    title: "Accounting Tutor",
-    subjects: "Financial Accounting • Basics • Exam Revision",
-    level: "High School • University",
-    mode: "Online • Weekly Sessions",
-    price: "From $11/session",
-    description:
-      "Breaks down difficult accounting topics into simple steps with structured practice.",
-  },
-  {
-    name: "Karabo P.",
-    title: "Coding Fundamentals Coach",
-    subjects: "Programming Basics • Logic • Intro Projects",
-    level: "Teen Learners • Beginners",
-    mode: "Online • Project-Based",
-    price: "From $14/session",
-    description:
-      "Supports learners entering coding with a practical, friendly, step-by-step approach.",
-  },
-  {
-    name: "Tshepo D.",
-    title: "AI Learning Coach",
-    subjects: "Study Planning • AI Tools • Smarter Revision",
-    level: "All Levels",
-    mode: "Online • Guided Study Support",
-    price: "From $9/session",
-    description:
-      "Combines human support with AI-assisted study planning for better independent learning.",
-  },
-]
+export default function FindATutorPage() {
+  const [form, setForm] = useState<TutorFormState>(initialState)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
+  const [successMessage, setSuccessMessage] = useState("")
 
-export default function FindTutorPage() {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setErrorMessage("")
+    setSuccessMessage("")
+
+    if (!form.subject || !form.level || !form.goals.trim()) {
+      setErrorMessage("Please complete subject, level, and learning goals.")
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+
+      const response = await fetch("/api/tutor-requests", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        setErrorMessage(result.error || "Something went wrong while saving your request.")
+        return
+      }
+
+      setSuccessMessage("Your tutor request has been submitted successfully.")
+      setForm(initialState)
+    } catch (error) {
+      console.error("Tutor request submission error:", error)
+      setErrorMessage("Unable to submit right now. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <div>
       <section className="page-hero">
@@ -107,15 +87,11 @@ export default function FindTutorPage() {
             </div>
 
             <div className="page-hero-panel">
-              <div className="find-tutor-summary-card">
-                <div className="find-tutor-summary-logo">
-                  <Image
-                    src="/brand/icon.png"
-                    alt="Matolematics icon"
-                    width={42}
-                    height={42}
-                  />
+              <div className="how-summary-card">
+                <div className="how-summary-logo">
+                  <span className="mini-step-number">✓</span>
                 </div>
+
                 <h3>How booking works</h3>
 
                 <div className="mini-step-list">
@@ -135,48 +111,70 @@ export default function FindTutorPage() {
               </div>
             </div>
           </div>
+
+          <div className="brand-strip">
+            <div className="brand-strip-item">
+              <span className="brand-strip-text">AI-powered tutoring</span>
+            </div>
+            <div className="brand-strip-item">
+              <span className="brand-strip-text">Flexible access</span>
+            </div>
+            <div className="brand-strip-item">
+              <span className="brand-strip-text">Global ambition</span>
+            </div>
+          </div>
         </div>
       </section>
 
       <section id="tutor-search" className="section">
         <div className="container">
-          <div className="search-panel">
-            <div className="search-panel-header">
+          <div className="contact-form-panel">
+            <div>
               <p className="section-kicker">Tutor search</p>
               <h2 className="section-title">Start with what matters most</h2>
               <p className="section-description section-description-left">
-                Use these fields as your first request form. Later we can connect this to a
-                real database and booking flow.
+                Use these fields as your first request form. Later we can connect this
+                to tutor profiles, filtering, and a full booking workflow.
               </p>
             </div>
 
-            <form className="tutor-search-form">
+            <form className="contact-form" onSubmit={handleSubmit}>
               <div className="form-grid">
                 <div className="form-field">
                   <label htmlFor="subject">Subject</label>
-                  <select id="subject" defaultValue="">
-                    <option value="" disabled>
-                      Choose a subject
-                    </option>
-                    {subjects.map((subject) => (
-                      <option key={subject} value={subject}>
-                        {subject}
-                      </option>
-                    ))}
+                  <select
+                    id="subject"
+                    value={form.subject}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, subject: event.target.value }))
+                    }
+                  >
+                    <option value="">Choose a subject</option>
+                    <option value="Mathematics">Mathematics</option>
+                    <option value="Physical Sciences">Physical Sciences</option>
+                    <option value="Accounting">Accounting</option>
+                    <option value="Statistics">Statistics</option>
+                    <option value="Coding">Coding</option>
+                    <option value="AI & Data Skills">AI & Data Skills</option>
                   </select>
                 </div>
 
                 <div className="form-field">
                   <label htmlFor="level">Level</label>
-                  <select id="level" defaultValue="">
-                    <option value="" disabled>
-                      Choose a level
-                    </option>
-                    {levels.map((level) => (
-                      <option key={level} value={level}>
-                        {level}
-                      </option>
-                    ))}
+                  <select
+                    id="level"
+                    value={form.level}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, level: event.target.value }))
+                    }
+                  >
+                    <option value="">Choose a level</option>
+                    <option value="Primary School">Primary School</option>
+                    <option value="Middle School">Middle School</option>
+                    <option value="High School">High School</option>
+                    <option value="University">University</option>
+                    <option value="Adult Learning">Adult Learning</option>
+                    <option value="Exam Preparation">Exam Preparation</option>
                   </select>
                 </div>
 
@@ -186,19 +184,28 @@ export default function FindTutorPage() {
                     id="budget"
                     type="text"
                     placeholder="e.g. $10 - $20 per session"
+                    value={form.budget}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, budget: event.target.value }))
+                    }
                   />
                 </div>
 
                 <div className="form-field">
                   <label htmlFor="frequency">Session frequency</label>
-                  <select id="frequency" defaultValue="">
-                    <option value="" disabled>
-                      Choose frequency
-                    </option>
-                    <option>Once a week</option>
-                    <option>Twice a week</option>
-                    <option>Three times a week</option>
-                    <option>Flexible / as needed</option>
+                  <select
+                    id="frequency"
+                    value={form.frequency}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, frequency: event.target.value }))
+                    }
+                  >
+                    <option value="">Choose frequency</option>
+                    <option value="Once a week">Once a week</option>
+                    <option value="Twice a week">Twice a week</option>
+                    <option value="Three times a week">Three times a week</option>
+                    <option value="Flexible">Flexible</option>
+                    <option value="Exam-only support">Exam-only support</option>
                   </select>
                 </div>
 
@@ -206,110 +213,31 @@ export default function FindTutorPage() {
                   <label htmlFor="goals">Learning goals</label>
                   <textarea
                     id="goals"
-                    rows={5}
+                    rows={6}
                     placeholder="Describe the learner’s goals, current challenges, exams, or topics that need support."
+                    value={form.goals}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, goals: event.target.value }))
+                    }
                   />
                 </div>
               </div>
 
+              {errorMessage ? <p className="form-message form-message-error">{errorMessage}</p> : null}
+              {successMessage ? (
+                <p className="form-message form-message-success">{successMessage}</p>
+              ) : null}
+
               <div className="form-actions">
-                <button type="submit" className="button button-primary">
-                  Request Tutor Support
+                <button
+                  type="submit"
+                  className="button button-primary"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Submitting..." : "Submit Request"}
                 </button>
-                <Link href="/contact" className="button button-secondary">
-                  Ask a Question
-                </Link>
               </div>
             </form>
-          </div>
-        </div>
-      </section>
-
-      <section className="section section-soft">
-        <div className="container">
-          <div className="section-header">
-            <p className="section-kicker">Available tutors</p>
-            <h2 className="section-title">Preview your tutoring options</h2>
-            <p className="section-description">
-              These are sample tutor profiles for the first version of your marketplace.
-              We can connect them to real tutor onboarding next.
-            </p>
-          </div>
-
-          <div className="tutor-results-grid">
-            {tutors.map((tutor) => (
-              <article key={tutor.name} className="tutor-result-card">
-                <div className="tutor-result-top">
-                  <div className="tutor-result-avatar">
-                    <Image
-                      src="/brand/icon.png"
-                      alt="Matolematics icon"
-                      width={42}
-                      height={42}
-                    />
-                  </div>
-
-                  <div>
-                    <h3>{tutor.name}</h3>
-                    <p className="tutor-result-title">{tutor.title}</p>
-                  </div>
-                </div>
-
-                <div className="tutor-result-meta">
-                  <div className="meta-block">
-                    <span className="meta-label">Subjects</span>
-                    <span>{tutor.subjects}</span>
-                  </div>
-                  <div className="meta-block">
-                    <span className="meta-label">Level</span>
-                    <span>{tutor.level}</span>
-                  </div>
-                  <div className="meta-block">
-                    <span className="meta-label">Format</span>
-                    <span>{tutor.mode}</span>
-                  </div>
-                  <div className="meta-block">
-                    <span className="meta-label">Pricing</span>
-                    <span>{tutor.price}</span>
-                  </div>
-                </div>
-
-                <p className="tutor-result-description">{tutor.description}</p>
-
-                <div className="tutor-result-actions">
-                  <a href="#tutor-search" className="button button-primary button-small">
-                    Request This Tutor
-                  </a>
-                  <Link href="/contact" className="button button-secondary button-small">
-                    Learn More
-                  </Link>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="container">
-          <div className="find-tutor-cta">
-            <div>
-              <p className="section-kicker">Flexible access</p>
-              <h2 className="section-title">Need support but have budget constraints?</h2>
-              <p className="section-description section-description-left">
-                Learners and families can request subsidized or foundation-supported
-                access where needed.
-              </p>
-            </div>
-
-            <div className="button-row">
-              <Link href="/foundation" className="button button-primary">
-                Apply for Support
-              </Link>
-              <Link href="/pricing" className="button button-secondary">
-                View Pricing Options
-              </Link>
-            </div>
           </div>
         </div>
       </section>
