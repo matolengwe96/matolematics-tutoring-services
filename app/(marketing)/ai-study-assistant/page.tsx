@@ -1,264 +1,215 @@
-import Image from "next/image"
-import Link from "next/link"
+"use client"
 
-const assistantFeatures = [
-  {
-    title: "Concept explanations",
-    text: "Learners can get simpler breakdowns of difficult ideas before or after live tutoring sessions.",
-  },
-  {
-    title: "Study planning",
-    text: "Use structured weekly plans to help learners revise consistently and stay accountable.",
-  },
-  {
-    title: "Practice support",
-    text: "Generate guided practice prompts, revision questions, and topic-based exercises.",
-  },
-  {
-    title: "Session reinforcement",
-    text: "Extend learning beyond tutoring sessions with summaries, follow-up tasks, and revision prompts.",
-  },
-]
+import { FormEvent, useState } from "react"
 
-const assistantUseCases = [
-  {
-    title: "Before tutoring",
-    text: "Prepare learners with topic overviews, vocabulary support, and readiness checks.",
-  },
-  {
-    title: "Between sessions",
-    text: "Keep progress moving with AI-assisted revision, practice, and reminders.",
-  },
-  {
-    title: "After tutoring",
-    text: "Reinforce session outcomes through summaries, next steps, and targeted follow-up work.",
-  },
-]
+type RecommendedTutor = {
+  id: string
+  full_name: string
+  subjects: string[]
+  levels: string[]
+  delivery_modes: string[]
+  bio: string
+  rate_from: number | null
+  rate_to: number | null
+}
 
-const assistantModules = [
-  "Explain a topic simply",
-  "Create a revision plan",
-  "Generate quiz questions",
-  "Summarize a tutoring session",
-  "Break down difficult homework",
-  "Recommend next study steps",
+type ChatMessage = {
+  role: "user" | "assistant"
+  content: string
+  recommendedTutors?: RecommendedTutor[]
+}
+
+const starterPrompts = [
+  "Help me make a study plan for Grade 12 Mathematics.",
+  "Explain functions in a simple way.",
+  "How do I prepare for a statistics test?",
+  "Help me understand Python loops.",
 ]
 
 export default function AIStudyAssistantPage() {
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      role: "assistant",
+      content:
+        "Hi, I’m the Matolematics AI Study Assistant. Ask me for help with maths, statistics, coding, study planning, or exam preparation.",
+    },
+  ])
+
+  const [input, setInput] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
+
+  async function sendMessage(messageText: string) {
+    const cleanMessage = messageText.trim()
+
+    if (!cleanMessage || isLoading) {
+      return
+    }
+
+    setErrorMessage("")
+    setInput("")
+
+    const nextMessages: ChatMessage[] = [
+      ...messages,
+      {
+        role: "user",
+        content: cleanMessage,
+      },
+    ]
+
+    setMessages(nextMessages)
+    setIsLoading(true)
+
+    try {
+      const response = await fetch("/api/ai-study-assistant", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: cleanMessage,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Something went wrong.")
+      }
+
+      setMessages([
+  ...nextMessages,
+  {
+    role: "assistant",
+    content: data.reply,
+    recommendedTutors: data.recommendedTutors ?? [],
+  },
+])
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again."
+      )
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    await sendMessage(input)
+  }
+
   return (
-    <div>
-      <section className="page-hero">
+    <main className="ai-chat-page">
+      <section className="ai-chat-hero">
         <div className="container">
-          <div className="page-hero-shell">
-            <div className="page-hero-copy">
-              <p className="section-kicker">AI Study Assistant</p>
-              <h1 className="page-title">Human tutoring supported by smarter learning tools</h1>
-              <p className="page-description">
-                The AI Study Assistant helps learners prepare, revise, and stay
-                engaged between tutoring sessions with more structure and less friction.
-              </p>
-
-              <div className="button-row">
-                <Link href="/find-a-tutor" className="button button-primary">
-                  Find a Tutor
-                </Link>
-                <Link href="/pricing" className="button button-secondary">
-                  View Pricing
-                </Link>
-              </div>
-            </div>
-
-            <div className="page-hero-panel">
-              <div className="ai-summary-card">
-                <div className="ai-summary-logo">
-                  <Image
-                    src="/brand/icon.png"
-                    alt="Matolematics icon"
-                    width={42}
-                    height={42}
-                  />
-                </div>
-
-                <h3>How the assistant helps</h3>
-
-                <div className="mini-step-list">
-                  <div className="mini-step-item">
-                    <span className="mini-step-number">1</span>
-                    <p>Explains difficult concepts in simpler language.</p>
-                  </div>
-                  <div className="mini-step-item">
-                    <span className="mini-step-number">2</span>
-                    <p>Supports revision planning and guided practice.</p>
-                  </div>
-                  <div className="mini-step-item">
-                    <span className="mini-step-number">3</span>
-                    <p>Works alongside live tutors instead of replacing them.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="brand-strip">
-            <div className="brand-strip-item">
-              <Image
-                src="/brand/icon.png"
-                alt="Matolematics icon"
-                width={28}
-                height={28}
-                className="brand-strip-icon"
-              />
-              <span>Study support</span>
-            </div>
-            <div className="brand-strip-item">
-              <Image
-                src="/brand/icon.png"
-                alt="Matolematics icon"
-                width={28}
-                height={28}
-                className="brand-strip-icon"
-              />
-              <span>Smarter revision</span>
-            </div>
-            <div className="brand-strip-item">
-              <Image
-                src="/brand/icon.png"
-                alt="Matolematics icon"
-                width={28}
-                height={28}
-                className="brand-strip-icon"
-              />
-              <span>Human + AI learning</span>
-            </div>
-          </div>
+          <p className="section-kicker">AI Study Assistant</p>
+          <h1 className="page-title">Learn faster with guided support</h1>
+          <p className="page-description">
+            Ask questions, get step-by-step explanations, and build better study habits with
+            Matolematics AI support.
+          </p>
         </div>
       </section>
 
-      <section className="section">
-        <div className="container">
-          <div className="section-header">
-            <p className="section-kicker">Core features</p>
-            <h2 className="section-title">What the AI Study Assistant can do</h2>
-            <p className="section-description">
-              These capabilities make tutoring more effective by adding support
-              before, during, and after the live learning experience.
-            </p>
-          </div>
+      <section className="container ai-chat-section">
+        <div className="ai-chat-shell">
+          <div className="ai-chat-sidebar">
+            <h2>Try asking</h2>
 
-          <div className="feature-grid">
-            {assistantFeatures.map((feature) => (
-              <article key={feature.title} className="feature-card">
-                <h3 className="feature-title">{feature.title}</h3>
-                <p className="feature-text">{feature.text}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="section section-soft">
-        <div className="container">
-          <div className="section-header">
-            <p className="section-kicker">When to use it</p>
-            <h2 className="section-title">Built into the learning journey</h2>
-          </div>
-
-          <div className="ai-journey-grid">
-            {assistantUseCases.map((item) => (
-              <article key={item.title} className="ai-journey-card">
-                <h3>{item.title}</h3>
-                <p>{item.text}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="container">
-          <div className="ai-demo-panel">
-            <div>
-              <p className="section-kicker">Example modules</p>
-              <h2 className="section-title">A flexible AI layer for many learning needs</h2>
-              <p className="section-description section-description-left">
-                This can eventually evolve into a true product experience with
-                chatbot workflows, revision assistants, progress tracking, and more.
-              </p>
-            </div>
-
-            <div className="ai-module-list">
-              {assistantModules.map((module) => (
-                <div key={module} className="ai-module-item">
-                  {module}
-                </div>
+            <div className="ai-prompt-list">
+              {starterPrompts.map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  className="ai-prompt-button"
+                  onClick={() => sendMessage(prompt)}
+                  disabled={isLoading}
+                >
+                  {prompt}
+                </button>
               ))}
             </div>
-          </div>
-        </div>
-      </section>
 
-      <section className="section section-soft">
-        <div className="container">
-          <div className="section-header">
-            <p className="section-kicker">Why this matters</p>
-            <h2 className="section-title">More support without more friction</h2>
-          </div>
-
-          <div className="how-difference-grid">
-            <article className="how-difference-card">
-              <h3>Supports affordability</h3>
+            <div className="ai-chat-note">
+              <strong>Demo tip:</strong>
               <p>
-                AI tools can help extend support for learners who cannot always access frequent live sessions.
-              </p>
-            </article>
-
-            <article className="how-difference-card">
-              <h3>Improves consistency</h3>
-              <p>
-                Students often struggle between sessions. The assistant helps keep them active and engaged.
-              </p>
-            </article>
-
-            <article className="how-difference-card">
-              <h3>Strengthens outcomes</h3>
-              <p>
-                Tutors become more effective when learners arrive better prepared and continue practicing afterward.
-              </p>
-            </article>
-
-            <article className="how-difference-card">
-              <h3>Builds product differentiation</h3>
-              <p>
-                This gives Matolematics a modern edge beyond traditional tutoring marketplaces.
-              </p>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="container">
-          <div className="find-tutor-cta">
-            <div>
-              <p className="section-kicker">Next step</p>
-              <h2 className="section-title">Pair tutoring with smarter learning support</h2>
-              <p className="section-description section-description-left">
-                Start with tutor matching now and build toward a richer AI-assisted
-                learning platform over time.
+                Ask a maths, statistics, coding, or study planning question during your
+                presentation.
               </p>
             </div>
+          </div>
 
-            <div className="button-row">
-              <Link href="/find-a-tutor" className="button button-primary">
-                Find a Tutor
-              </Link>
-              <Link href="/subjects" className="button button-secondary">
-                Browse Subjects
-              </Link>
+          <div className="ai-chat-card">
+            <div className="ai-chat-messages">
+              {messages.map((message, index) => (
+                <div
+                  key={`${message.role}-${index}`}
+                  className={`ai-message ai-message-${message.role}`}
+                >
+                  <span className="ai-message-label">
+                    {message.role === "assistant" ? "Matolematics AI" : "You"}
+                  </span>
+                  <p>{message.content}</p>
+
+{message.recommendedTutors && message.recommendedTutors.length > 0 ? (
+  <div className="ai-tutor-recommendations">
+    <strong>Recommended tutors</strong>
+
+    {message.recommendedTutors.map((tutor) => (
+      <div key={tutor.id} className="ai-tutor-card">
+        <h3>{tutor.full_name}</h3>
+        <p>{tutor.bio}</p>
+
+        <div className="chip-list">
+          {tutor.subjects.map((subject) => (
+            <span key={subject} className="chip">
+              {subject}
+            </span>
+          ))}
+        </div>
+
+        <small>
+          {tutor.rate_from || tutor.rate_to
+            ? `Rate: R${tutor.rate_from ?? "?"} - R${tutor.rate_to ?? "?"}`
+            : "Rate available on request"}
+        </small>
+      </div>
+    ))}
+  </div>
+) : null}
+                </div>
+              ))}
+
+              {isLoading ? (
+                <div className="ai-message ai-message-assistant">
+                  <span className="ai-message-label">Matolematics AI</span>
+                  <p>Thinking...</p>
+                </div>
+              ) : null}
             </div>
+
+            {errorMessage ? (
+              <p className="form-message form-message-error">{errorMessage}</p>
+            ) : null}
+
+            <form className="ai-chat-form" onSubmit={handleSubmit}>
+              <textarea
+                value={input}
+                onChange={(event) => setInput(event.target.value)}
+                placeholder="Ask for help with maths, coding, exam prep, or study planning..."
+                rows={3}
+              />
+
+              <button type="submit" className="button button-primary" disabled={isLoading}>
+                {isLoading ? "Thinking..." : "Send"}
+              </button>
+            </form>
           </div>
         </div>
       </section>
-    </div>
+    </main>
   )
 }

@@ -58,6 +58,22 @@ function matchesSearch(value: string, query: string) {
   return value.toLowerCase().includes(query.toLowerCase())
 }
 
+function ChipList({ items }: { items?: string[] | null }) {
+  if (!items || items.length === 0) {
+    return <span>—</span>
+  }
+
+  return (
+    <div className="chip-list">
+      {items.map((item) => (
+        <span key={item} className="chip">
+          {item}
+        </span>
+      ))}
+    </div>
+  )
+}
+
 export default async function AdminDashboardPage(props: AdminPageProps) {
   if (!requireAdminSession()) {
     redirect("/admin-login")
@@ -108,8 +124,12 @@ export default async function AdminDashboardPage(props: AdminPageProps) {
   let safeTutors = (tutors ?? []) as TutorProfile[]
 
   if (statusFilter !== "all") {
-    safeTutorRequests = safeTutorRequests.filter((item) => item.status === statusFilter)
-    safeContactMessages = safeContactMessages.filter((item) => item.status === statusFilter)
+    safeTutorRequests = safeTutorRequests.filter(
+      (item) => item.status === statusFilter
+    )
+    safeContactMessages = safeContactMessages.filter(
+      (item) => item.status === statusFilter
+    )
   }
 
   if (query) {
@@ -275,6 +295,7 @@ export default async function AdminDashboardPage(props: AdminPageProps) {
                     <th>Actions</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {safeTutorRequests.length === 0 ? (
                     <tr>
@@ -355,6 +376,7 @@ export default async function AdminDashboardPage(props: AdminPageProps) {
                     <th>Actions</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {safeContactMessages.length === 0 ? (
                     <tr>
@@ -520,6 +542,7 @@ export default async function AdminDashboardPage(props: AdminPageProps) {
                     <th>Actions</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {safeTutors.length === 0 ? (
                     <tr>
@@ -537,9 +560,15 @@ export default async function AdminDashboardPage(props: AdminPageProps) {
                           </span>
                         </td>
                         <td>{tutor.full_name}</td>
-                        <td>{tutor.subjects.join(", ")}</td>
-                        <td>{tutor.levels.join(", ")}</td>
-                        <td>{tutor.delivery_modes.join(", ") || "—"}</td>
+                        <td>
+                          <ChipList items={tutor.subjects} />
+                        </td>
+                        <td>
+                          <ChipList items={tutor.levels} />
+                        </td>
+                        <td>
+                          <ChipList items={tutor.delivery_modes} />
+                        </td>
                         <td>
                           {tutor.rate_from || tutor.rate_to
                             ? `${tutor.rate_from ?? "?"} - ${tutor.rate_to ?? "?"}`
